@@ -15,7 +15,7 @@ void Invariant_Mass(){
     TLorentzVector lambda_gen(0.,0.,0,2.286);
     
     
-    TH1F *lambda_M_gen   = new TH1F("lambda_gen"," Invariant mass of generated Lambdac",100, 1.5,3);
+    TH1F *lambda_M_gen   = new TH1F("#Lambda_{c}^{+}"," Invariant mass of generated #Lambda_{c}^{+}",100, 1.5,3);
     
     Double_t masse[3]= {0.938, 0.494, 0.140};
     TGenPhaseSpace event;
@@ -60,6 +60,9 @@ void Invariant_Mass(){
         }
     }
    TCanvas *c1 =new TCanvas("c1","c1");
+   lambda_M_gen->GetXaxis()->SetTitle("m_{#Lambda}[GeV/c^{2}]");
+   lambda_M_gen->GetYaxis()->SetTitle("#frac{dN}{dm}");
+   c1->SaveAs("inveriant_mass.png");
    lambda_M_gen->Draw();
    
    
