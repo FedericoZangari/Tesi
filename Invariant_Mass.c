@@ -62,8 +62,8 @@ void Invariant_Mass(){
    TCanvas *c1 =new TCanvas("c1","c1");
    lambda_M_gen->GetXaxis()->SetTitle("m_{#Lambda}[GeV/c^{2}]");
    lambda_M_gen->GetYaxis()->SetTitle("#frac{dN}{dm}");
-   c1->SaveAs("inveriant_mass.png");
-   lambda_M_gen->Draw();
    
+   lambda_M_gen->Draw();
+   c1->SaveAs("invariant_mass.png");
    
 }
