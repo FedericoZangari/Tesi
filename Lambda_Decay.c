@@ -10,9 +10,9 @@ void Lambda_Decay(){
     tree->SetBranchAddress("Lambda_cplus_TRUEP_Z", &pz_lambda);
 
     TH1F *lambda_p   = new TH1F("#Lambda_{c}^{+}","Momentum distribution of #Lambda_{c}^{+}",100,400,7000);
-    TH1F *p= new TH1F("p", "Energy distribution of protons",100, 0, 4000);
-    TH1F *K= new TH1F("K^{-}", "Energy distribution of K^{-}",100, 0, 4000);
-    TH1F *pi= new TH1F("#pi^{+}", "Energy distribution of #pi^{+}",100, 0, 3000);  
+    TH1F *p= new TH1F("p", "Momentum distribution of protons",100, 0, 4000);
+    TH1F *K= new TH1F("K^{-}", "Momentum distribution of K^{-}",100, 0, 4000);
+    TH1F *pi= new TH1F("#pi^{+}", "Momentum distribution of #pi^{+}",100, 0, 3000);  
     Int_t nentries = (Int_t)tree->GetEntries();
     cout << nentries << endl;
 
@@ -34,9 +34,9 @@ void Lambda_Decay(){
         TLorentzVector *pK    = event.GetDecay(1);
         TLorentzVector *pPi    = event.GetDecay(2);
 
-        p->Fill(pProton->E(), weight);
-        K->Fill(pK->E(), weight);
-        pi->Fill(pPi->E(), weight);
+        p->Fill(pProton->P(), weight);
+        K->Fill(pK->P(), weight);
+        pi->Fill(pPi->P(), weight);
    }
    TCanvas *c1 = new TCanvas("c1","c1");
    lambda_p->GetXaxis()->SetTitle("p[GeV/c]");
@@ -45,24 +45,24 @@ void Lambda_Decay(){
    c1->SaveAs("lambda_distrib.png");
    TCanvas *c2 = new TCanvas("c2","c2");
    c2->cd();
-   p->GetXaxis()->SetTitle("E[GeV]");
-   p->GetYaxis()->SetTitle("#frac{dN}{dE}");
+   p->GetXaxis()->SetTitle("p[GeV/c]");
+   p->GetYaxis()->SetTitle("#frac{dN}{dp}");
    K->SetLineColor(kSpring);
    p->Draw();
    c2->SaveAs("p_distrib.png");
 
    TCanvas *c3 = new TCanvas("c3","c3");
    c3->cd();
-   K->GetXaxis()->SetTitle("E[GeV]");
-   K->GetYaxis()->SetTitle("#frac{dN}{dE}");
+   K->GetXaxis()->SetTitle("p[GeV/c]");
+   K->GetYaxis()->SetTitle("#frac{dN}{dp}");
    K->SetLineColor(kRed);
    K->Draw("same");
    c3->SaveAs("K_distrib.png");
 
    TCanvas *c4 = new TCanvas("c4","c4");
    c4->cd();
-   pi->GetXaxis()->SetTitle("E[GeV]");
-   pi->GetYaxis()->SetTitle("#frac{dN}{dE}");
+   pi->GetXaxis()->SetTitle("p[GeV/c]");
+   pi->GetYaxis()->SetTitle("#frac{dN}{dp}");
    pi->SetLineColor(kCyan);
    pi->Draw("same");
    c4->SaveAs("pi_distrib.png");
