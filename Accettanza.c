@@ -3,10 +3,10 @@ void Accettanza(){
     for(int z=0; z<4; z++){
 
         string title;
-        if (z==0) title = "Lc_thCy0_T2cm_Ge5mrad7cm.root";
-        if (z==1) title = "Lc_thCy0_T2cm_Ge7mrad7cm.root";
-        if (z==2) title = "Lc_thCy0_T2cm_Si5mrad7cm.root";
-        if (z==3) title = "Lc_thCy0_T2cm_Si7mrad7cm.root";
+        if (z==0) title = "Lc_thCy0_T2cm_Si5mrad7cm.root";
+        if (z==1) title = "Lc_thCy0_T2cm_Si7mrad7cm.root";
+        if (z==2) title = "Lc_thCy0_T2cm_Ge5mrad7cm.root";
+        if (z==3) title = "Lc_thCy0_T2cm_Ge7mrad7cm.root";
         string material = title.substr (14,2);
         string bending = title.substr (16,5);
         cout << endl << material << "\t" << bending << endl;
@@ -31,6 +31,7 @@ void Accettanza(){
 
         Double_t B= 1.4, L=3.4;
         vector<Double_t> counts;
+        vector<Double_t> y = {0,0,0};
         Double_t y1= 0.5;                               // tutte le dispersioni in y sono in cm
         Double_t y2=0, y3=0, y4=0, y5=0;
        
@@ -52,33 +53,29 @@ void Accettanza(){
                     TLorentzVector *Pi    = event.GetDecay(2);
 
                     y3 = 0.3*L*L*B/2./p->P()*1.E2;
-                    y4 = (p->Theta())*(L+1.)*1.E2;
+                    y4 = (p->Py()/p->Pz())*(L+1.)*1.E2;
                     y5= gRandom->Gaus(0,0.05);
-                    if(y1+y2+y3+y4+y5 < 2) counts[0]++;
-                    if(y1+y2+y3+y4+y5 < 2.5) counts[1]++;
-                    if(y1+y2+y3+y4+y5 < 3) counts[2]++;
-                    if(y1+y2+y3+y4+y5 < 4) counts[3]++;
+                    y[0]=y1+y2+y3+y4+y5;
 
-                    y3 = 0.3*L*L*B/2./K->P()*1.E2;
-                    y4 =(K->Theta())*(L+1.)*1.E2;
+                    y3 = -0.3*L*L*B/2./K->P()*1.E2;
+                    y4 =(K->Py()/K->Pz())*(L+1.)*1.E2;
                     y5= gRandom->Gaus(0,0.05);
-                    if(y1+y2+y3+y4+y5 < 2) counts[0]++;
-                    if(y1+y2+y3+y4+y5 < 2.5) counts[1]++;
-                    if(y1+y2+y3+y4+y5 < 3) counts[2]++;
-                    if(y1+y2+y3+y4+y5 < 4) counts[3]++;
+                    y[1]=y1+y2+y3+y4+y5;
 
                     y3 = 0.3*L*L*B/2./Pi->P()*1.E2;
-                    y4 = (Pi->Theta())*(L+1.)*1.E2;
+                    y4 = (Pi->Py()/Pi->Pz())*(L+1.)*1.E2;
                     y5= gRandom->Gaus(0,0.05);
-                    if(y1+y2+y3+y4+y5 < 2) counts[0]++;
-                    if(y1+y2+y3+y4+y5 < 2.5) counts[1]++;
-                    if(y1+y2+y3+y4+y5 < 3) counts[2]++;
-                    if(y1+y2+y3+y4+y5 < 4) counts[3]++;
+                    y[2]=y1+y2+y3+y4+y5;
+
+                    if(y[0] < 2. && y[1] < 2.  && y[2]< 2.) counts[0]++;
+                    if(y[0] < 2.5 && y[1] < 2.5  && y[2]< 2.5) counts[1]++;
+                    if(y[0] < 3. && y[1] < 3.  && y[2]< 3.) counts[2]++;
+                    if(y[0] < 4. && y[1] < 4.  && y[2]< 4.) counts[3]++;
                
                 }
             }
             cout << "B= " << B << "T \t L= " << L << " m\t";
-            cout << setprecision(2) << counts[0]/nentries/3./500.*100. <<  "\t" << counts[1]/nentries/3./500.*100. << "\t" << counts[2]/nentries/3./500.*100. << "\t" << counts[3]/nentries/3./500.*100. <<endl;
+            cout << setprecision(2) << counts[0]/nentries/500.*100. <<  "\t" << counts[1]/nentries/500.*100. << "\t" << counts[2]/nentries/500.*100. << "\t" << counts[3]/nentries/500.*100. <<endl;
             B= 1.1; L=1.7;
 
         }
