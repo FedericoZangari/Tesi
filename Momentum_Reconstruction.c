@@ -1,9 +1,9 @@
 void Momentum_Reconstruction(){
     string title;
     //title = "Lc_thCy0_T2cm_Ge5mrad7cmx5.root";
-    //title = "Lc_thCy0_T2cm_Ge7mrad7cmx5.root";
+    title = "Lc_thCy0_T2cm_Ge7mrad7cmx5.root";
     //title = "Lc_thCy0_T2cm_Si5mrad7cmx5.root";
-    title = "Lc_thCy0_T2cm_Si7mrad7cmx5.root";
+    //title = "Lc_thCy0_T2cm_Si7mrad7cmx5.root";
     string material = title.substr (14,2);
     string bending = title.substr (16,5);
     cout << endl << material << "\t" << bending << endl;
@@ -30,27 +30,37 @@ void Momentum_Reconstruction(){
     tree->SetBranchAddress("piplus_TRUEP_Z", &pz_pi);
         
     Double_t nentries = (Double_t)tree->GetEntries();
-    //cout << nentries << endl;
+    cout << nentries << endl;
     TLorentzVector p, K, pi;
+    TLorentzVector p_gen, K_gen, pi_gen;
+    TLorentzVector lambda_gen;
     
 
-    Double_t B= 1.4, L=3.4, R_B = 3;
-    //Double_t B= 1.1, L=1.7, R_B=3;
+    //Double_t B= 1.4, L=3.4, R_B = 3;
+    Double_t B= 1.1, L=1.7, R_B=3;
     
                                   
     
-    Double_t theta, theta_y_in, theta_y_out;            //tutti gli angoli sono espressi in radianti
+    Double_t theta_y, theta_x, theta_y_in, theta_y_out, theta_x_mis;            //tutti gli angoli sono espressi in radianti
     Double_t theta_bend_1 = 50.E-6;
     Double_t theta_bend_2 = stod(bending.substr(0,1))*1.E-3;
+
     Double_t y, y_real;                                    // tutte le dispersioni in y sono in cm
     vector<Double_t> track_y;
-    //vector<Double_t> track_x;
+    Double_t x, x_real;
+    vector<Double_t> track_x;
     vector<Double_t> z;
     Double_t p_mis;
     Double_t D= 50;
     Double_t sigma_p;
-    TGraph * sigma = new TGraph();
+    Double_t masse[3]= {0.938272081, 0.493677, 0.13957039};
+    vector<bool> index = {0,0,0};
 
+    TGraph * sigma = new TGraph();
+    TRandom3 *gRandom = new  TRandom3(1);
+    gRandom->SetSeed(1);
+    string title2 = " Invariant mass of #Lambda_{c}^{+} generated from tracks (" + material +" "+ bending+ ")";
+    TH1F *lambda_M_gen   = new TH1F("#Lambda_{c}^{+}",title2.c_str(),40, 2,2.5);
       
     for (Int_t i=0; i<nentries; i++) {
         tree->GetEntry(i);
@@ -62,46 +72,77 @@ void Momentum_Reconstruction(){
         TLorentzVector v= p;
         for(int j= 0; j < 3; j++){                  // eseguo un ciclo per ogni particella
             
-            theta = v.Py() / v.Pz() + theta_bend_1 + theta_bend_2;        // angolo vero della particella lungo y, considerando l'apertura del decadimento e le deviazioni dei 2 cristalli
-            y =  theta_bend_1*100.*1.E2  +  gRandom->Gaus(0, 0.05);
-            TGraph *g = new TGraph();
+            theta_y = v.Py() / v.Pz() + theta_bend_1 + theta_bend_2;        // angolo vero della particella lungo y, considerando l'apertura del decadimento e le deviazioni dei 2 cristalli
+            theta_x = v.Px() / v.Pz();
+            y =  theta_bend_1*100.*1.E2  +  gRandom->Gaus(0, 0.05); 
+            x =  gRandom->Gaus(0, 0.05); 
+
+            TGraph *trk_y = new TGraph();
+            TGraph *trk_x = new TGraph();
             for(int k=0; k < 4; k++){                  // un ciclo per tracker
                 z.push_back(1.*100. - D +  k * D / 3.);   // z misurata rispetto al secondo cristallo
-                y_real= y + tan(theta) * z[k];
+                y_real= y + tan(theta_y) * z[k];
+                x_real= x + tan(theta_x) * z[k];
                 track_y.push_back( gRandom->Gaus( y_real, 10E-4 ));             // genero le tracce
-                theta += gRandom->Gaus( 0,  13.6 / (v.Beta() * v.P()*1000.) * sqrt(10E-4/9.37) );          //aggiungo una deviazione dovuta allo scattering multiplo sul tracker
-                g->SetPoint(k, z[k], track_y[k]);
+                track_x.push_back( gRandom->Gaus( x_real, 10E-4 ));
+                theta_y += gRandom->Gaus( 0,  13.6 / (v.Beta() * v.P()*1000.) * sqrt(10E-4/9.37) );          //aggiungo una deviazione dovuta allo scattering multiplo sul tracker
+                theta_x += gRandom->Gaus( 0,  13.6 / (v.Beta() * v.P()*1000.) * sqrt(10E-4/9.37) );
+                trk_y->SetPoint(k, z[k], track_y[k]);
+                trk_x->SetPoint(k, z[k], track_x[k]);
             }
 
-            g->Fit("pol1","Q");
-            TF1 *fit = g->GetFunction("pol1");
+            trk_y->Fit("pol1","Q");
+            TF1 *fit = trk_y->GetFunction("pol1");
             theta_y_in = atan( fit->GetParameter(1));
+            //cout << theta_y << "\t" << theta_y_in << endl;
             z.clear();
             track_y.clear();
 
-            if(j != 1) theta += 0.3 * L * B / v.P();                    // aggiungo la deflessione del magnete all'angolo vero
-            if(j == 1) theta -= 0.3 * L * B / v.P();
+            if(j != 1) theta_y += 0.3 * L * B / v.P();                    // aggiungo la deflessione del magnete all'angolo y vero
+            if(j == 1) theta_y -= 0.3 * L * B / v.P();
 
             for(int k=0; k < 4; k++){                  // un ciclo per tracker
                 z.push_back(1*100 + L +  k * D / 3.);
-                y_real= y + tan( theta ) * z[k];
+                y_real= y + tan( theta_y ) * z[k];
+                x_real= x + tan( theta_x ) * z[k];
                 track_y.push_back( gRandom->Gaus( y_real, 10E-4 ));             // genero le tracce dopo il magnete
-                theta += gRandom->Gaus( 0,  13.6 / (v.Beta() * v.P()*1000.) * sqrt(10E-4/9.37) );       //scattering multiplo
-                g->SetPoint(k, z[k], track_y[k]);
+                track_x.push_back( gRandom->Gaus( x_real, 10E-4 )); 
+                theta_y += gRandom->Gaus( 0,  13.6 / (v.Beta() * v.P()*1000.) * sqrt(10E-4/9.37) );       //scattering multiplo
+                theta_x += gRandom->Gaus( 0,  13.6 / (v.Beta() * v.P()*1000.) * sqrt(10E-4/9.37) );
+                trk_y->SetPoint(k, z[k], track_y[k]);
+                trk_x->SetPoint(k+4, z[k], track_x[k+4]);
             }
             
-            g->Fit("pol1","Q");
-            fit = g->GetFunction("pol1");
+            trk_y->Fit("pol1","Q");
+            fit = trk_y->GetFunction("pol1");
             theta_y_out = atan( fit->GetParameter(1));
+
+            trk_x->Fit("pol1","Q");
+            fit = trk_x->GetFunction("pol1");
+            theta_x_mis = atan( fit->GetParameter(1));
+            
+            //cout << theta_x << "\t" << theta_x_mis << endl;
             z.clear();
             track_y.clear();
+            track_x.clear();
 
-            p_mis = 0.3* L * B / abs(theta_y_out - theta_y_in);
+            p_mis = 0.3* L * B / abs(theta_y_out - theta_y_in);     //in GeV
             sigma_p = abs(p_mis - v.P());
-            if(track_y[0] < R_B) sigma->SetPoint(i*3+j, v.P(), sigma_p );           // considero solo le particelle che riescono ad uscire dal magnete
+            if(track_y[0] < R_B){
+                index[j] = 1;
+                sigma->SetPoint(i*3+j, v.P(), sigma_p );           // considero solo le particelle che riescono ad uscire dal magnete
+            }
             if(j==0) v=K;
             if(j==1) v=pi;
+            Double_t pz = p_mis / sqrt( pow( tan(theta_x_mis),2 ) + pow( tan(theta_y_in),2) + 1 );
+            //cout << pz << endl;
+            if(j==0) p_gen.SetPxPyPzE(pz*tan(theta_x_mis),pz*tan(theta_y_in),pz,sqrt(p_mis*p_mis+masse[j]*masse[j]));
+            if(j==1) K_gen.SetPxPyPzE(pz*tan(theta_x_mis),pz*tan(theta_y_in),pz,sqrt(p_mis*p_mis+masse[j]*masse[j]));
+            if(j==2) pi_gen.SetPxPyPzE(pz*tan(theta_x_mis),pz*tan(theta_y_in),pz,sqrt(p_mis*p_mis+masse[j]*masse[j]));
         }
+        lambda_gen = p_gen + K_gen + pi_gen;
+        if(index[0]==1 && index[1]==1 &&  index[2]==1 )lambda_M_gen->Fill(lambda_gen.M());
+        //cout << lambda_gen.M() << endl;
         
     }
     
@@ -136,7 +177,18 @@ void Momentum_Reconstruction(){
     l->Draw("same");
     cout << "1/(LD)\t" << 2/0.3/L/B/D*10E-6*100 << endl;
     cout << "1/L^2\t" << 2/0.3/L/B/L*10E-6 << endl;
-    
+
+
+    TCanvas *c1 =new TCanvas("c1","c1", 900, 550);
+    lambda_M_gen->GetXaxis()->SetTitle("m_{#Lambda}[GeV/c^{2}]");
+    lambda_M_gen->GetYaxis()->SetTitle("#frac{dN}{dm}");
+    lambda_M_gen->Draw();
+    TLegend *l1 = new TLegend(0.15,0.65,0.4,0.89);
+    l1->AddEntry((TObject*)0, TString::Format("D = %g m" , D/100.), "");
+    l1->AddEntry((TObject*)0, TString::Format("B = %g T", B), "");
+    l1->AddEntry((TObject*)0, TString::Format("L = %g m", L), "");
+    l1->AddEntry((TObject*)0, TString::Format("R_{B} = %g cm", R_B), "");
+    l1->Draw("same");
     
     c->SaveAs("Incertezze_p_gen.png");
 }
